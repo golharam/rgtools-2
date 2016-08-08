@@ -143,7 +143,7 @@ public class CalculateTargetRegionCoverage {
     		outWriter.close();
     	samReader.close();
     	bedReader.close();
-    	log.info("Found " + totalReadCount + " spanning " + bedRecordCount + " BED features");
+    	log.info("Found " + totalReadCount + " reads spanning " + bedRecordCount + " BED features");
         final long end = System.currentTimeMillis();
         log.info(String.format("Done. Elapsed time %.3f seconds", (end - start) / 1000.0));                
 	}
