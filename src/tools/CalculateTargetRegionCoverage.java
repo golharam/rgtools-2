@@ -79,6 +79,7 @@ public class CalculateTargetRegionCoverage {
         }
         
         // iterate BED file
+    	long totalReadCount = 0l;
     	long bedRecordCount = 0l;
     	Iterator<BEDFeature> bedIterator = bedReader.iterator();
     	while (bedIterator.hasNext()) {
@@ -96,7 +97,7 @@ public class CalculateTargetRegionCoverage {
         	int bedFeatureLength = bedFeatureEnd - bedFeatureStart + 1;
         	int[] perBaseCoverage = new int[bedFeatureLength];
         	int readCount = 0;
-
+        	
     		SAMRecordIterator samIterator = samReader.query(bedFeature.getContig(), bedFeature.getStart(), bedFeature.getEnd(), false);
     		while (samIterator.hasNext()) {
         		SAMRecord rec = samIterator.next();
@@ -127,8 +128,7 @@ public class CalculateTargetRegionCoverage {
         			totalBases10x++;
         		}        		
         	}
-
-        	//String str = String.format("%s\t%d\t%d\t%d\t%d", bedFeature.toString(), readCount, totalBases0x, totalBases10x);
+        	
         	outStr = String.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s", bedFeature.getContig(), bedFeature.getStart(), bedFeature.getEnd(), 
         													     bedFeature.getName(), bedFeatureLength, coverage, totalBases0x, totalBases10x);
         	if (outWriter != null)
@@ -136,13 +136,14 @@ public class CalculateTargetRegionCoverage {
         	else
         		log.info(outStr);
 
+        	totalReadCount += readCount;
     		bedRecordCount++;
         }
     	if (outWriter != null)
     		outWriter.close();
     	samReader.close();
     	bedReader.close();
-    	log.info("Found " + bedRecordCount + " features");
+    	log.info("Found " + totalReadCount + " spanning " + bedRecordCount + " BED features");
         final long end = System.currentTimeMillis();
         log.info(String.format("Done. Elapsed time %.3f seconds", (end - start) / 1000.0));                
 	}
