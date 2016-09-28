@@ -167,7 +167,7 @@ public class CalculateTargetRegionCoverage {
     }
 	
 	private static void printConfigurationInfo() throws IOException {
-		log.info("Version + " + version);
+		log.info("Version " + version);
 		String hostname = "";
 		try {
 			hostname = InetAddress.getLocalHost().getHostName();
