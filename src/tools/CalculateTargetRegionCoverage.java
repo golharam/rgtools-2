@@ -46,7 +46,8 @@ import htsjdk.variant.vcf.VCFInfoHeaderLine;
  * Output: Coverage information for regions in a BED file 
 */
 public class CalculateTargetRegionCoverage {
-    private static final Log log = Log.getInstance(CalculateTargetRegionCoverage.class);
+	private static String version = "16.09.28";
+	private static final Log log = Log.getInstance(CalculateTargetRegionCoverage.class);
 
 	public static void main(String[] args) throws IOException {
         if (args.length < 1) {
@@ -71,7 +72,7 @@ public class CalculateTargetRegionCoverage {
 
        	// open output file
         PrintWriter outWriter = (outputFile != null) ? new PrintWriter(outputFile) : null;
-        String outStr = "chr\tstart\tend\tname\tlength\tcoverage\ttotalBases0X\ttotalBases10X";
+        String outStr = "chr\tstart\tend\tname\tlength\treadCount\tcoverage\ttotalBases0X\ttotalBases10X";
         if (outWriter != null) {
         	outWriter.println(outStr);
         } else {
@@ -91,7 +92,7 @@ public class CalculateTargetRegionCoverage {
         		continue;
         	}
 
-    		// iterate of SAM records that overlap this BED feature and record how many SAM reads are each position of the BED feature
+    		// iterate the SAM records that overlap this BED feature and record how many SAM reads are each position of the BED feature
         	int bedFeatureStart = bedFeature.getStart();
         	int bedFeatureEnd = bedFeature.getEnd();
         	int bedFeatureLength = bedFeatureEnd - bedFeatureStart + 1;
@@ -103,17 +104,16 @@ public class CalculateTargetRegionCoverage {
         		SAMRecord rec = samIterator.next();
         		if (filterRead(rec)) continue;
             	
-        		readCount++;
-                // walk over each base of the bed feature and add 1 to each base this read covers.
-                for (final AlignmentBlock block : rec.getAlignmentBlocks()) {
-                    final int end = CoordMath.getEnd(block.getReferenceStart(), block.getLength());
-                    for (int pos=block.getReferenceStart(); pos<=end; ++ pos) {
-                        if (pos >= bedFeatureStart && pos <= bedFeatureEnd) {
-                        	perBaseCoverage[pos - bedFeatureStart]++;
-                        }
-                    }
-                }
-        		
+	       		readCount++;
+			// walk over each base of the bed feature and add 1 to each base this read covers.
+			for (final AlignmentBlock block : rec.getAlignmentBlocks()) {
+				final int end = CoordMath.getEnd(block.getReferenceStart(), block.getLength());
+				for (int pos=block.getReferenceStart(); pos<=end; ++ pos) {
+					if (pos >= bedFeatureStart && pos <= bedFeatureEnd) {
+						perBaseCoverage[pos - bedFeatureStart]++;
+					}
+				}
+        		}
     		}
     		samIterator.close();
 
@@ -129,8 +129,8 @@ public class CalculateTargetRegionCoverage {
         		}        		
         	}
         	
-        	outStr = String.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s", bedFeature.getContig(), bedFeature.getStart(), bedFeature.getEnd(), 
-        													     bedFeature.getName(), bedFeatureLength, coverage, totalBases0x, totalBases10x);
+        	outStr = String.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s", bedFeature.getContig(), bedFeature.getStart(), bedFeature.getEnd(), 
+        								bedFeature.getName(), bedFeatureLength, readCount, coverage, totalBases0x, totalBases10x);
         	if (outWriter != null)
         		outWriter.println(outStr);
         	else
@@ -167,13 +167,20 @@ public class CalculateTargetRegionCoverage {
     }
 	
 	private static void printConfigurationInfo() throws IOException {
-        log.info("Executing as " +
-                System.getProperty("user.name") + '@' + InetAddress.getLocalHost().getHostName() +
+		log.info("Version + " + version);
+		String hostname = "";
+		try {
+			hostname = InetAddress.getLocalHost().getHostName();
+		} catch (java.net.UnknownHostException e) {
+			hostname = "unknownhost";
+		}
+	        log.info("Executing as " +
+                System.getProperty("user.name") + '@' + hostname +
                 " on " + System.getProperty("os.name") + ' ' + System.getProperty("os.version") +
                 ' ' + System.getProperty("os.arch") + "; " + System.getProperty("java.vm.name") +
                 ' ' + System.getProperty("java.runtime.version"));
 
-        log.info(Defaults.allDefaults().entrySet().stream().map(e -> e.getKey() + ':' + e.getValue()).collect(Collectors.<String>joining(" ")));
+        	log.info(Defaults.allDefaults().entrySet().stream().map(e -> e.getKey() + ':' + e.getValue()).collect(Collectors.<String>joining(" ")));
     }
 
     private static AbstractFeatureReader getBEDReader(File bedFile) {
