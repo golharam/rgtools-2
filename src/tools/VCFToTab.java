@@ -6,17 +6,13 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 
-import htsjdk.samtools.SAMUtils;
 import htsjdk.samtools.util.Log;
-import htsjdk.samtools.util.ProgressLogger;
 import htsjdk.samtools.util.StringUtil;
 import htsjdk.tribble.AbstractFeatureReader;
-import htsjdk.tribble.bed.BEDFeature;
 import htsjdk.tribble.readers.LineIterator;
-import htsjdk.variant.variantcontext.Allele;
+import htsjdk.variant.variantcontext.Genotype;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFCodec;
 import htsjdk.variant.vcf.VCFFormatHeaderLine;
@@ -86,7 +82,6 @@ public class VCFToTab extends CommandLineTool {
     	outWriter.write("\n");
 
     	// print out the variants with the info field values in the same order
-        final ProgressLogger pl = new ProgressLogger(log, 1000000);
         for (final VariantContext vc : vcfReader.iterator()) {
         	String altAlleles = StringUtil.join(",", vc.getAlternateAlleles());
         	String filter = StringUtil.join(",", vc.getFilters());
@@ -102,6 +97,23 @@ public class VCFToTab extends CommandLineTool {
         			outWriter.write(StringUtil.join(",", attrs));
         		}
     		}
+        	
+        	// Print out the genotypes
+        	Iterable<Genotype> genotypes = vc.getGenotypesOrderedBy(sampleNames);
+        	for (Genotype genotype : genotypes) {
+        		for (String perSampleKey : perSampleKeyList) {
+        			outWriter.write("\t");
+        			if (genotype.hasAnyAttribute(perSampleKey)) {
+        				if (perSampleKey.equals("GT")) {
+        					outWriter.write(genotype.getGenotypeString());
+        				} else if (perSampleKey.equals("PL")) {
+        					outWriter.write(genotype.getLikelihoodsString());
+        				} else {
+        					outWriter.write("" + genotype.getAnyAttribute(perSampleKey));
+        				}
+        			}
+        		}
+        	}
         	outWriter.write("\n");
         }
 
