@@ -45,7 +45,7 @@ import htsjdk.variant.vcf.VCFInfoHeaderLine;
  * Input: BAM file, BED file of target regions
  * Output: Coverage information for regions in a BED file 
 */
-public class CalculateTargetRegionCoverage {
+public class CalculateTargetRegionCoverage extends CommandLineTool {
 	private static String version = "16.09.28";
 	private static final Log log = Log.getInstance(CalculateTargetRegionCoverage.class);
 
@@ -61,7 +61,7 @@ public class CalculateTargetRegionCoverage {
         final long start = System.currentTimeMillis();
 
         log.info("Start with args:" + Arrays.toString(args));
-        printConfigurationInfo();
+        printConfigurationInfo(version);
 
         // open BED file
         BEDCodec bedCodec = new BEDCodec();
@@ -166,22 +166,6 @@ public class CalculateTargetRegionCoverage {
         return false;
     }
 	
-	private static void printConfigurationInfo() throws IOException {
-		log.info("Version " + version);
-		String hostname = "";
-		try {
-			hostname = InetAddress.getLocalHost().getHostName();
-		} catch (java.net.UnknownHostException e) {
-			hostname = "unknownhost";
-		}
-	        log.info("Executing as " +
-                System.getProperty("user.name") + '@' + hostname +
-                " on " + System.getProperty("os.name") + ' ' + System.getProperty("os.version") +
-                ' ' + System.getProperty("os.arch") + "; " + System.getProperty("java.vm.name") +
-                ' ' + System.getProperty("java.runtime.version"));
-
-        	log.info(Defaults.allDefaults().entrySet().stream().map(e -> e.getKey() + ':' + e.getValue()).collect(Collectors.<String>joining(" ")));
-    }
 
     private static AbstractFeatureReader getBEDReader(File bedFile) {
 	    FeatureCodec bedCodec = new BEDCodec();
